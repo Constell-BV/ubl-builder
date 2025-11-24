@@ -1,0 +1,18 @@
+{
+    "name": "dave/ubl-builder",
+    "autoload": {
+        "psr-4": {
+            "Dave\\UblBuilder\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Dave Decano",
+            "email": "dave@constell.com"
+        }
+    ],
+    "require": {
+        "josemmo/einvoicing": "^0.3.1",
+        "vlucas/phpdotenv": "^5.6"
+    }
+}

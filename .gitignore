@@ -1,0 +1,39 @@
+# Environment configuration
+.env
+.env.local
+.env.*.local
+
+# Composer dependencies
+/vendor/
+
+# Output files
+/output/*.xml
+/output/*.json
+/output/*.html
+
+# Keep output directory structure
+!/output/.gitkeep
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# PHP
+*.cache
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup

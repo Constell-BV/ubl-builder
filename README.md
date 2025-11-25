@@ -664,63 +664,104 @@ php my-invoice-script.php
 
 ### Complete Data Schema
 
+The data structure follows the [josemmo/einvoicing](https://github.com/josemmo/einvoicing) library structure exactly. All field names map directly to library methods.
+
 ```json
 {
   "invoice": {
-    "number": "INV-2024-001",
-    "issueDate": "2024-11-24",
-    "dueDate": "2024-12-24",
-    "currency": "EUR",
-    "type": "380",
-    "note": "Optional note"
+    "number": "INV-2025-001",
+    "issueDate": "2025-11-25",
+    "dueDate": "2025-12-25",
+    "typeCode": "380",
+    "buyerReference": "DEPT-001",
+    "currency": "EUR"
   },
   "seller": {
-    "name": "Company Name",
-    "address": "Street Address",
-    "city": "City",
-    "postalCode": "1234AB",
+    "name": "Example Supplier B.V.",
+    "address": "Example Street 12",
+    "city": "Amsterdam",
+    "postalCode": "1000AA",
     "country": "NL",
     "vatNumber": "NL123456789B01",
     "companyId": "12345678",
-    "companyIdScheme": "0183",
-    "electronicAddress": "email@company.com",
-    "electronicAddressScheme": "9957"
+    "companyIdScheme": "0106",
+    "electronicAddress": "0106:12345678",
+    "electronicAddressScheme": "0106",
+    "contactName": "John Doe",
+    "contactEmail": "info@example.com",
+    "contactPhone": "+31 20 1234567"
   },
   "buyer": {
-    "name": "Buyer Name",
-    "address": "Buyer Address",
-    "city": "City",
-    "postalCode": "1234AB",
+    "name": "Customer B.V.",
+    "address": "Customer Road 56",
+    "city": "Rotterdam",
+    "postalCode": "3000BB",
     "country": "NL",
-    "vatNumber": "Optional for B2C",
-    "companyId": "Optional for B2C",
-    "companyIdScheme": "0183",
-    "electronicAddress": "buyer@email.com",
-    "electronicAddressScheme": "9957",
-    "reference": "Optional reference"
+    "electronicAddress": "0106:87654321",
+    "electronicAddressScheme": "0106",
+    "vatNumber": "NL987654321B01",
+    "companyId": "87654321",
+    "companyIdScheme": "0106"
   },
   "lines": [
     {
-      "name": "Product/Service Name",
+      "id": 1,
+      "name": "Consulting Services – November",
+      "description": "Monthly consulting retainer",
       "quantity": 1,
+      "unitCode": "H87",
       "price": 100.00,
       "vatRate": 21,
       "vatCategory": "S"
     }
   ],
   "totals": {
-    "taxExclusive": 100.00,
-    "taxInclusive": 121.00,
-    "taxAmount": 21.00,
-    "payableAmount": 121.00
+    "lineExtension": 150.00,
+    "taxExclusive": 150.00,
+    "taxAmount": 31.50,
+    "taxInclusive": 181.50,
+    "payableAmount": 181.50
   },
-  "paymentInfo": {
-    "iban": "NL91ABNA0417164300",
-    "bic": "ABNANL2A",
-    "reference": "Optional payment reference"
+  "taxBreakdown": [
+    {
+      "rate": 21,
+      "category": "S",
+      "taxableAmount": 150.00,
+      "taxAmount": 31.50
+    }
+  ],
+  "payment": {
+    "paymentMeansCode": "31",
+    "iban": "NL00BANK0123456789",
+    "bic": "BANKNL2A",
+    "paymentTerms": "30 days net"
   }
 }
 ```
+
+### Field Mapping to Library
+
+All fields map directly to the [josemmo/einvoicing](https://github.com/josemmo/einvoicing) library:
+
+| Data Field | Library Method | Class |
+|------------|----------------|-------|
+| `invoice.number` | `setNumber()` | [`Invoice`](vendor/josemmo/einvoicing/src/Invoice.php) |
+| `invoice.typeCode` | `setType()` | [`Invoice`](vendor/josemmo/einvoicing/src/Invoice.php) |
+| `invoice.buyerReference` | `setBuyerReference()` | [`Invoice`](vendor/josemmo/einvoicing/src/Invoice.php) |
+| `seller.companyId` | `setCompanyId(Identifier)` | [`Party`](vendor/josemmo/einvoicing/src/Party.php) |
+| `lines[].id` | `setId()` | [`InvoiceLine`](vendor/josemmo/einvoicing/src/InvoiceLine.php) |
+| `lines[].unitCode` | `setUnit()` | [`InvoiceLine`](vendor/josemmo/einvoicing/src/InvoiceLine.php) |
+| `payment.paymentMeansCode` | `setMeansCode()` | [`Payment`](vendor/josemmo/einvoicing/src/Payments/Payment.php) |
+| `payment.iban` | `setAccountId()` | [`Transfer`](vendor/josemmo/einvoicing/src/Payments/Transfer.php) |
+| `payment.bic` | `setProvider()` | [`Transfer`](vendor/josemmo/einvoicing/src/Payments/Transfer.php) |
+
+**Note:** Totals are automatically calculated by the library via [`InvoiceTotals::fromInvoice()`](vendor/josemmo/einvoicing/src/Models/InvoiceTotals.php).
+
+### Invoice Type Codes
+
+- `380` - Commercial Invoice (default)
+- `381` - Credit Note
+- `386` - Prepayment Invoice
 
 ### VAT Categories
 
@@ -729,18 +770,35 @@ php my-invoice-script.php
 - `E` - Exempt
 - `AE` - Reverse charge
 
+### Unit Codes (UN/ECE Recommendation 20)
+
+- `H87` - Piece/Unit (default)
+- `C62` - Unit (generic)
+- `HUR` - Hour
+- `DAY` - Day
+- `MTR` - Meter
+- `KGM` - Kilogram
+
 ### Electronic Address Schemes (ISO 6523)
 
+- `0106` - Dutch KVK for PEPPOL (recommended for NL)
 - `9957` - Email
 - `0088` - EAN/GLN
 - `0184` - Dutch Peppol ID
-- `9956` - Website URL
 
 ### Company ID Schemes (ISO 6523)
 
+- `0106` - Dutch KVK for PEPPOL (recommended)
 - `0183` - Dutch KVK (Chamber of Commerce)
-- `0106` - Dutch RSIN
 - `9956` - Website registration
+
+### Payment Means Codes
+
+- `31` - SEPA Credit Transfer (default for NL)
+- `30` - Credit Transfer
+- `42` - Payment to bank account
+- `48` - Bank card
+- `49` - Direct debit
 
 ## Smart Fallbacks & Validation
 
@@ -753,7 +811,8 @@ When data is missing, the system applies legally compliant fallback values to en
 | Buyer postal code | "1000AA" | Valid NL format (non-existent) |
 | Buyer email | "noreply@buyer.invalid" | RFC 6761 (.invalid TLD) |
 | Email scheme | "9957" | ISO 6523 (email) |
-| Company ID scheme | "0183" | ISO 6523 (NL KVK) |
+| Company ID scheme | "0106" | ISO 6523 (NL KVK PEPPOL) |
+| Payment means code | "31" | SEPA Credit Transfer |
 | IBAN | "NL00INGB0000000000" | Valid format, invalid checksum |
 | BIC | "INGBNL2A" | ISO 9362 format |
 

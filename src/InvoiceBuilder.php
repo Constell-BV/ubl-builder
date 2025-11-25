@@ -7,6 +7,8 @@ use Einvoicing\Invoice;
 use Einvoicing\InvoiceLine;
 use Einvoicing\Party;
 use Einvoicing\Identifier;
+use Einvoicing\Payments\Payment;
+use Einvoicing\Payments\Transfer;
 use Einvoicing\Presets;
 use Exception;
 
@@ -59,8 +61,8 @@ class InvoiceBuilder
         }
 
         // Set payment information if available
-        if (isset($data['paymentInfo'])) {
-            $this->setPaymentInfo($invoice, $data['paymentInfo']);
+        if (isset($data['payment'])) {
+            $this->setPaymentInfo($invoice, $data['payment']);
         }
 
         return $invoice;
@@ -102,18 +104,17 @@ class InvoiceBuilder
             $invoice->addNote($data['notes']);
         }
 
-        // Set buyer reference or purchase order reference (required by validation)
-        // Use buyer reference if provided
+        // Set buyer reference (required by Peppol validation)
         if (!empty($data['buyerReference'])) {
             $invoice->setBuyerReference($data['buyerReference']);
-        }
-        // Otherwise use purchase order reference if provided
-        elseif (!empty($data['purchaseOrderReference'])) {
-            $invoice->setPurchaseOrderReference($data['purchaseOrderReference']);
-        }
-        // If neither is provided, use invoice number as placeholder
-        else {
+        } else {
+            // Fallback to invoice number if not provided
             $invoice->setBuyerReference($data['number']);
+        }
+        
+        // Set type code if available (380=Invoice, 381=Credit Note)
+        if (!empty($data['typeCode'])) {
+            $invoice->setType($data['typeCode']);
         }
     }
 
@@ -198,6 +199,11 @@ class InvoiceBuilder
     {
         $line = new InvoiceLine();
 
+        // Set line ID if available
+        if (!empty($data['id'])) {
+            $line->setId((string)$data['id']);
+        }
+
         // Set name (required)
         $line->setName($data['name']);
 
@@ -209,9 +215,9 @@ class InvoiceBuilder
         // Set quantity (required)
         $line->setQuantity($data['quantity']);
 
-        // Set unit if available
-        if (!empty($data['unit'])) {
-            $line->setUnit($data['unit']);
+        // Set unit code if available
+        if (!empty($data['unitCode'])) {
+            $line->setUnit($data['unitCode']);
         }
 
         // Set price (required)
@@ -243,8 +249,29 @@ class InvoiceBuilder
      */
     private function setPaymentInfo(Invoice $invoice, array $data): void
     {
-        // Payment means methods not available in current version of library
-        // TODO: Add payment information when library supports it
+        // Create Payment object
+        $payment = new Payment();
+        
+        // Set payment means code (31 = SEPA Credit Transfer)
+        if (!empty($data['paymentMeansCode'])) {
+            $payment->setMeansCode($data['paymentMeansCode']);
+        }
+        
+        // Add transfer information if IBAN is provided
+        if (!empty($data['iban'])) {
+            $transfer = new Transfer();
+            $transfer->setAccountId($data['iban']);
+            
+            // Set BIC if available
+            if (!empty($data['bic'])) {
+                $transfer->setProvider($data['bic']);
+            }
+            
+            $payment->addTransfer($transfer);
+        }
+        
+        // Add payment to invoice
+        $invoice->addPayment($payment);
         
         // Set payment terms if available
         if (!empty($data['paymentTerms'])) {
